@@ -1,15 +1,28 @@
-Descripción: Este laboratorio presenta una configuración insegura de CORS donde la aplicación web refleja dinámicamente cualquier valor recibido en el encabezado Origin en el encabezado de respuesta Access-Control-Allow-Origin.
+# 🌐 CORS con Reflexión Básica del Origen
 
-Vulnerabilidad identificada: La aplicación confía en cualquier origen externo y permite el envío de credenciales (Access-Control-Allow-Credentials: true). Esto permite a un atacante realizar peticiones en nombre de la víctima y leer la respuesta.
+## 🎯 Objetivo
+Extraer información sensible (API Key) del perfil de un usuario aprovechando una configuración de CORS extremadamente permisiva.
 
-Flujo del Ataque:
+## 🛡️ Detalles de la Vulnerabilidad
+* **Vulnerabilidad:** CORS Misconfiguration (Basic Origin Reflection) 🔀
+* **Severidad:** Media-Alta 🔴
+* **Concepto clave:** El servidor refleja dinámicamente cualquier valor recibido en el encabezado `Origin` y permite el uso de credenciales.
 
-La víctima visita una página maliciosa controlada por el atacante.
+## ⚙️ Explicación Técnica
+La aplicación web confía ciegamente en cualquier origen externo al reflejar el encabezado `Origin` de la solicitud en el encabezado de respuesta `Access-Control-Allow-Origin`. Además, al estar configurada con `Access-Control-Allow-Credentials: true`, permite que scripts de sitios terceros realicen peticiones autenticadas y lean la respuesta.
 
-El script de la página maliciosa realiza una petición GET autenticada al endpoint /accountDetails.
+El exploit utiliza JavaScript para realizar una petición `GET` al endpoint `/accountDetails` en nombre del usuario víctima y luego envía el contenido de la respuesta (que incluye la API Key) a un servidor controlado por el atacante.
 
-Debido a la mala configuración de CORS, el navegador permite que el script lea la información privada (como la API Key).
+## 📊 Flujo del Ataque
+```mermaid
+sequenceDiagram
+    participant V as Navegador Víctima
+    participant S as Servidor Vulnerable
+    participant A as Servidor Atacante
 
-El script envía (exfiltra) los datos capturados al servidor del atacante.
-
-Impacto: Exfiltración de información sensible del perfil del usuario, incluyendo claves de API y datos personales.
+    V->>A: Visita página maliciosa del atacante
+    A-->>V: Entrega el script de exploit
+    V->>S: GET /accountDetails (Origin: atacante.com + Cookies)
+    S-->>V: Respuesta con datos (CORS permite el origen reflejado)
+    V->>A: Exfiltración de datos robados vía URL (Base64)
+    Note right of A: 🚩 API Key capturada en logs
